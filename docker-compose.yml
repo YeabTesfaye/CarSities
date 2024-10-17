@@ -1,11 +1,13 @@
 services:
-  postgres:
-    image: postgres
+  mongodb_container:
+    image: mongo
     environment:
-      POSTGRES_PASSWORD: yeab
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: rootpass 
     ports:
-      - 5432:5432
+      - "27017:27017"
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - mongodb_data_container:/data/db
+   
 volumes:
-  pgdata:
+  mongodb_data_container:
