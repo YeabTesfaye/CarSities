@@ -2,6 +2,7 @@ using System.Text.Json;
 using MongoDB.Driver;
 using MongoDB.Entities;
 using SearchService.Models;
+using SearchService.Services;
 
 namespace SearchService.Data;
 
@@ -9,29 +10,26 @@ public class DbInitializer
 {
     public static async Task InitDb(WebApplication app)
     {
-        var mongoClientSettings = MongoClientSettings.FromConnectionString(app.Configuration.GetConnectionString("MongoDbConnection"));
+        var mongoClientSettings = MongoClientSettings.FromConnectionString(
+            app.Configuration.GetConnectionString("MongoDbConnection")
+        );
         var mongoClient = new MongoClient(mongoClientSettings);
-        await DB.InitAsync("SearchDb", MongoClientSettings
-.FromConnectionString(app.Configuration.GetConnectionString("MongoDbConnection")));
-
+        await DB.InitAsync("SerchDb", mongoClientSettings);
 
         // to implement search capability 
         await DB.Index<Item>()
-            .Key(x => x.Make, KeyType.Text)
-            .Key(x => x.Model, KeyType.Text)
-            .Key(x => x.Color, KeyType.Text)
-            .CreateAsync();
+        .Key(x => x.Make, KeyType.Text)
+        .Key(x => x.Model, KeyType.Text)
+        .Key(x => x.Color, KeyType.Text)
+        .CreateAsync();
+
         var count = await DB.CountAsync<Item>();
-        if (count is 0)
-        {
-            Console.WriteLine("No data -- will attempt to seed");
-            var itemsData = await File.ReadAllTextAsync("Data/auctions.json");
+        using var scope = app.Services.CreateScope();
+        var httpClient = scope.ServiceProvider.GetRequiredService<AuctionSvcHttpClient>();
 
-            var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+        var items =  await httpClient.GetItemsForSearchDb();
+        Console.WriteLine(items.Count + " returened from the auction service");
 
-            var items = JsonSerializer.Deserialize<List<Item>>(itemsData, options);
-            await DB.SaveAsync(items);
-
-        }
+        if (items.Count > 0) await DB.SaveAsync(items);
     }
 }
