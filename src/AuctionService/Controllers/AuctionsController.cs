@@ -55,11 +55,11 @@ public class AuctionsController(AuctionDbContext context, IMapper mapper,
 
         _context.Auctions.Add(auction);
 
-        var result = await _context.SaveChangesAsync() > 0;
-
         var newAuction = _mapper.Map<AuctionDto>(auction);
 
         await _publishEndpoint.Publish(_mapper.Map<AuctionCreated>(newAuction));
+
+        var result = await _context.SaveChangesAsync() > 0;
 
         if (!result) return BadRequest("Could not save changes to the DB");
 
@@ -72,6 +72,7 @@ public class AuctionsController(AuctionDbContext context, IMapper mapper,
     {
         var auction = await _context.Auctions.Include(x => x.Item)
         .FirstOrDefaultAsync(x => x.Id == id);
+
         if (auction is null) return NotFound();
 
         // TODO : Check the seller is equal to username 
@@ -82,8 +83,12 @@ public class AuctionsController(AuctionDbContext context, IMapper mapper,
         auction.Item.Mileage = updateAuctionDto.Mileage ?? auction.Item.Mileage;
         auction.Item.Year = updateAuctionDto.Year ?? auction.Item.Year;
 
+        await _publishEndpoint.Publish(_mapper.Map<AuctionUpdated>(auction));
+
         var result = await _context.SaveChangesAsync() > 0;
+
         if (!result) return BadRequest("Problem saving changes!!");
+
         return Ok();
     }
 
@@ -95,7 +100,10 @@ public class AuctionsController(AuctionDbContext context, IMapper mapper,
         if (auction is null) return NotFound();
         // TODO : Check the seller is equal to username 
 
+        await _publishEndpoint.Publish<AuctionDeleted>(new { Id = auction.Id.ToString() });
+
         _context.Auctions.Remove(auction);
+
         var result = await _context.SaveChangesAsync() > 0;
         if (!result) return BadRequest("Could not update DB");
         return NoContent();
