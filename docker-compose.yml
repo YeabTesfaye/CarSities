@@ -70,7 +70,7 @@ services:
       - 5001:80
     depends_on:
       - postgres
-  gateway-svc:
+  gateway-svc: 
     image: yeab12/gateway-svc:latest
     build:
       context: .
