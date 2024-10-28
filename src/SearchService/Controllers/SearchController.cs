@@ -12,6 +12,7 @@ public class SearchController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<List<Item>>> SearchItems([FromQuery] SearchParams searchParams)
     {
+
         var query = DB.PagedSearch<Item, Item>();
         if (!string.IsNullOrWhiteSpace(searchParams.SearchTerm))
         {
@@ -40,7 +41,7 @@ public class SearchController : ControllerBase
         {
             query.Match(x => x.Winner == searchParams.Winner);
         }
-        query.PageNumber(searchParams.PageNumer);
+        query.PageNumber(searchParams.PageNumber);
         query.PageSize(searchParams.PageSize);
         var result = await query.ExecuteAsync();
         return Ok(new

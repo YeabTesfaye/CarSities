@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import CountdownTimer from "./CountdownTimer";
 import CardImage from "./CardImage";

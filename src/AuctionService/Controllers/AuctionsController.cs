@@ -1,6 +1,7 @@
 using AuctionService.Data;
 using AuctionService.DTOs;
 using AuctionService.Entities;
+using AuctionService.RequestHelpers;
 using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using Contracts;
@@ -32,7 +33,13 @@ public class AuctionsController(AuctionDbContext context, IMapper mapper,
             }
             else BadRequest("Invalid date format");
         }
-        return await query.ProjectTo<AuctionDto>(_mapper.ConfigurationProvider).ToListAsync();
+
+
+        var results = await query
+            .ProjectTo<AuctionDto>(_mapper.ConfigurationProvider) // Project to DTOs
+            .ToListAsync();
+
+        return Ok(results);
     }
     [HttpGet("{id:Guid}")]
     public async Task<ActionResult<AuctionDto>> GetAuctionById([FromRoute] Guid id)
@@ -100,8 +107,8 @@ public class AuctionsController(AuctionDbContext context, IMapper mapper,
         var auction = await _context.Auctions.Include(x => x.Item)
         .FirstOrDefaultAsync(x => x.Id == id);
         if (auction is null) return NotFound();
-     
-        if(auction.Seller != User.Identity.Name) return Forbid();
+
+        if (auction.Seller != User.Identity.Name) return Forbid();
 
         await _publishEndpoint.Publish<AuctionDeleted>(new { Id = auction.Id.ToString() });
 
