@@ -12,8 +12,8 @@ export default function NavBar() {
           Carsties Auction
         </div>
       </div>
-      <div>Right</div>
-      <div>Middele</div> 
+      <div>Search</div>
+      <div>Login</div> 
     </header>
   );
 }
