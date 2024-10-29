@@ -1,4 +1,3 @@
-using System.Text.Json;
 using MongoDB.Driver;
 using MongoDB.Entities;
 using SearchService.Models;
@@ -16,7 +15,7 @@ public class DbInitializer
         var mongoClient = new MongoClient(mongoClientSettings);
         await DB.InitAsync("SerchDb", mongoClientSettings);
 
-        // to implement search capability 
+        // to implement search capability using make,model and color 
         await DB.Index<Item>()
         .Key(x => x.Make, KeyType.Text)
         .Key(x => x.Model, KeyType.Text)

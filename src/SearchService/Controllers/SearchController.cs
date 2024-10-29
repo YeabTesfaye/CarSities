@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using MongoDB.Bson;
 using MongoDB.Entities;
 using SearchService.Models;
 using SearchService.RequestHelpers;
@@ -16,22 +17,34 @@ public class SearchController : ControllerBase
         var query = DB.PagedSearch<Item, Item>();
         if (!string.IsNullOrWhiteSpace(searchParams.SearchTerm))
         {
-            query.Match(Search.Full, searchParams.SearchTerm).SortByTextScore();
+            var searchRegex = new BsonRegularExpression(searchParams.SearchTerm, "i");
+
+            query.Match(x =>
+              x.Make.Contains(searchParams.SearchTerm, StringComparison.CurrentCultureIgnoreCase) ||
+              x.Model.Contains(searchParams.SearchTerm, StringComparison.CurrentCultureIgnoreCase) ||
+              x.Color.Contains(searchParams.SearchTerm, StringComparison.CurrentCultureIgnoreCase)
+          );
         }
+
+        // Sorting based on provided parameters 
         query = searchParams.OrderBy switch
         {
             "make" => query.Sort(x => x.Ascending(a => a.Make)),
             "new" => query.Sort(x => x.Descending(a => a.CreatedAt)),
-            _ => query.Sort(x => x.Ascending(a => a.Make))
+            _ => query.Sort(x => x.Ascending(a => a.AuctionEnd))
         };
 
-
-        query = searchParams.FilterBy switch
+        if (!string.IsNullOrEmpty(searchParams.FilterBy))
         {
-            "finished" => query.Match(x => x.AuctionEnd < DateTime.UtcNow),
-            "endingSoon" => query.Match(x => x.AuctionEnd < DateTime.UtcNow.AddHours(6)),
-            _ => query.Match(expression: x => x.AuctionEnd > DateTime.UtcNow)
-        };
+            query = searchParams.FilterBy switch
+            {
+                "finished" => query.Match(x => x.AuctionEnd < DateTime.UtcNow),
+                "endingSoon" => query.Match(x => x.AuctionEnd < DateTime.UtcNow.AddHours(6) && x.AuctionEnd > DateTime.UtcNow),
+                _ => query.Match(expression: x => x.AuctionEnd > DateTime.UtcNow)
+            };
+        }
+
+
 
         if (!string.IsNullOrEmpty(searchParams.Seller))
         {
