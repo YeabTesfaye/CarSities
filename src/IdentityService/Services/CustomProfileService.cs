@@ -24,11 +24,7 @@ public class CustomProfileService : IProfileService
             new Claim("username", user.UserName)
         };
         context.IssuedClaims.AddRange(claims);
-        var nameClaim = existingClaims.FirstOrDefault(x => x.Type == JwtClaimTypes.Name);
-        if (nameClaim != null)
-        {
-            context.IssuedClaims.Add(nameClaim);
-        }
+        context.IssuedClaims.Add(existingClaims.FirstOrDefault(x => x.Type == JwtClaimTypes.Name));
     }
 
     public Task IsActiveAsync(IsActiveContext context)
